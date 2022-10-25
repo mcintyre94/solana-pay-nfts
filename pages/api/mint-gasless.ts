@@ -32,7 +32,7 @@ async function postImpl(
   account: PublicKey
 ): Promise<MintOutputData> {
   const connection = new Connection(clusterApiUrl('devnet'))
-  const candyMachineAddress = new PublicKey("3vNpTMWAVLYo8XbKmcnH7BPQyjWc2eHfowuUuYvhCLja")
+  const candyMachineAddress = new PublicKey("7Sosk9YgpisDJo8hLWL3F1Dh2sW52KSLhhwez8vBYnpn")
 
   const payerPrivateKey = process.env.PAYER_PRIVATE_KEY
   if (!payerPrivateKey) throw new Error('PAYER_PRIVATE_KEY not found')

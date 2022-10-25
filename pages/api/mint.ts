@@ -31,7 +31,7 @@ async function postImpl(
   account: PublicKey
 ): Promise<MintOutputData> {
   const connection = new Connection(clusterApiUrl('devnet'))
-  const candyMachineAddress = new PublicKey("3vNpTMWAVLYo8XbKmcnH7BPQyjWc2eHfowuUuYvhCLja")
+  const candyMachineAddress = new PublicKey("7Sosk9YgpisDJo8hLWL3F1Dh2sW52KSLhhwez8vBYnpn")
 
   // Metaplex with account as guest identity
   const candyMachines = Metaplex
