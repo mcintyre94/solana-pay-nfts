@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next"
-import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js"
-import { guestIdentity, KeypairSigner, Metaplex } from "@metaplex-foundation/js"
+import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js"
+import { guestIdentity, keypairIdentity, KeypairSigner, Metaplex } from "@metaplex-foundation/js"
+import base58 from 'bs58'
 
 type MintInputData = {
   account: string,
@@ -22,7 +23,7 @@ type ErrorOutput = {
 
 function get(res: NextApiResponse<MintGetResponse>) {
   res.status(200).json({
-    label: "Dinos 'r' Us 🦖",
+    label: "Dinos 'R' Us 🦖",
     icon: "https://freesvg.org/img/DINO-01.png",
   })
 }
@@ -33,16 +34,24 @@ async function postImpl(
   const connection = new Connection(clusterApiUrl('devnet'))
   const candyMachineAddress = new PublicKey("3vNpTMWAVLYo8XbKmcnH7BPQyjWc2eHfowuUuYvhCLja")
 
+  const payerPrivateKey = process.env.PAYER_PRIVATE_KEY
+  if (!payerPrivateKey) throw new Error('PAYER_PRIVATE_KEY not found')
+  const payerKeypair = Keypair.fromSecretKey(base58.decode(payerPrivateKey))
+
   // Metaplex with account as guest identity
   const candyMachines = Metaplex
     .make(connection, { cluster: 'devnet' })
-    .use(guestIdentity(account))
+    .use(keypairIdentity(payerKeypair))
     .candyMachinesV2()
 
   const candyMachine = await candyMachines.findByAddress({ address: candyMachineAddress })
 
   // Transaction builder for mint
-  const transactionBuilder = await candyMachines.builders().mint({ candyMachine })
+  const transactionBuilder = await candyMachines.builders().mint({
+    candyMachine,
+    newOwner: account,
+  })
+  transactionBuilder.setFeePayer(payerKeypair)
 
   // Extract mint signer
   const context = transactionBuilder.getContext()
@@ -51,10 +60,16 @@ async function postImpl(
   // Convert to transaction
   const latestBlockhash = await connection.getLatestBlockhash()
   const transaction = await transactionBuilder.toTransaction(latestBlockhash)
-  transaction.feePayer = account
+
+  // Add scanning user as a keypair
+  transaction.instructions[0].keys.push({
+    pubkey: account,
+    isWritable: false,
+    isSigner: true,
+  })
 
   // Sign as the mint signer
-  transaction.sign(mintSigner)
+  transaction.sign(mintSigner, payerKeypair)
 
   // Serialize the transaction and convert to base64 to return it
   const serializedTransaction = transaction.serialize({
