@@ -10,7 +10,7 @@ export default function Home() {
     const apiUrl = `${location.protocol}//${location.host}/api/`
 
     const mintUrlFields: TransactionRequestURLFields = {
-      link: new URL(apiUrl + 'mint'),
+      link: new URL(apiUrl + 'mint?quantity=2'),
     }
     const mintUrl = encodeURL(mintUrlFields)
     const mintQr = createQR(mintUrl, 400, 'transparent')
