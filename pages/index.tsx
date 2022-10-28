@@ -1,7 +1,5 @@
 import { createQR, encodeURL, TransactionRequestURLFields } from "@solana/pay"
-import Link from "next/link"
 import { useEffect, useRef } from "react"
-import Navbar from "../components/Navbar"
 
 export default function Home() {
   const mintQrRef = useRef<HTMLDivElement>()
@@ -11,10 +9,11 @@ export default function Home() {
     const apiUrl = `${location.protocol}//${location.host}/api/`
 
     const mintUrlFields: TransactionRequestURLFields = {
-      link: new URL(apiUrl + 'mint-gasless'),
+      link: new URL(apiUrl + 'checkout'),
     }
     const mintUrl = encodeURL(mintUrlFields)
     const mintQr = createQR(mintUrl, 400, 'transparent')
+    console.log('mintQr', mintUrl.toString())
 
     if (mintQrRef.current) {
       mintQrRef.current.innerHTML = ''
@@ -23,13 +22,11 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="container flex flex-col gap-20 items-center p-4 mx-auto min-h-screen justify-center">
-      <Navbar />
-
-      <main>
-        <h1 className="font-mono text-xl code">Mint Gasless</h1>
+    <main className="container flex items-center p-4 mx-auto min-h-screen justify-center">
+      <div className="flex flex-col gap-8">
+        <h1 className="text-xl">Or scan QR code</h1>
         <div ref={mintQrRef} />
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }
