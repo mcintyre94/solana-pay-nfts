@@ -32,12 +32,12 @@ type GetResponse = {
   icon: string,
 }
 
-type PostResponse = {
+export type PostResponse = {
   transaction: string,
   message: string,
 }
 
-type PostError = {
+export type PostError = {
   error: string
 }
 
@@ -68,12 +68,12 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
 
   // Create a transaction builder to create the NFT
   const transactionBuilder = await nfts.builders().create({
-      uri: METADATA_URI, // use our metadata
-      name: NFT_NAME,
-      tokenOwner: account, // NFT is minted to the wallet submitting the transaction (buyer)
-      updateAuthority: shopKeypair, // we retain update authority
-      sellerFeeBasisPoints: 100, // 1% royalty
-      useNewMint: mintKeypair, // we pass our mint in as the new mint to use
+    uri: METADATA_URI, // use our metadata
+    name: NFT_NAME,
+    tokenOwner: account, // NFT is minted to the wallet submitting the transaction (buyer)
+    updateAuthority: shopKeypair, // we retain update authority
+    sellerFeeBasisPoints: 100, // 1% royalty
+    useNewMint: mintKeypair, // we pass our mint in as the new mint to use
   })
 
   // Next we create an instruction to transfer USDC from the buyer to the shop
@@ -146,6 +146,7 @@ async function post(
   res: NextApiResponse<PostResponse | PostError>
 ) {
   const { account } = req.body as InputData
+  console.log(req.body)
   if (!account) {
     res.status(400).json({ error: "No account provided" })
     return
