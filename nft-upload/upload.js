@@ -5,33 +5,50 @@ import * as dotenv from "dotenv"
 import * as fs from "fs"
 dotenv.config()
 
-async function main() {
-  const payerPrivateKey = process.env.PAYER_PRIVATE_KEY
-  if (!payerPrivateKey) throw new Error('PAYER_PRIVATE_KEY not found')
-  const payerKeypair = Keypair.fromSecretKey(base58.decode(payerPrivateKey))
+// update these variables!
+// Connection endpoint, switch to a mainnet RPC if using mainnet
+const ENDPOINT = clusterApiUrl('devnet')
 
-  const connection = new Connection(clusterApiUrl('devnet'))
+// Devnet Bundlr address
+const BUNDLR_ADDRESS = "https://devnet.bundlr.network"
+
+// Mainnet Bundlr address, uncomment if using mainnet
+// const BUNDLR_ADDRESS = "https://node1.bundlr.network"
+
+// NFT metadata
+const NFT_NAME = "Golden Ticket"
+const NFT_SYMBOL = "GOLD"
+const NFT_DESCRIPTION = "A golden ticket that grants access to loyalty rewards"
+// Set this relative to the root directory
+const NFT_IMAGE_PATH = "nft-upload/golden-ticket.jpg"
+const NFT_FILE_NAME = "golden-ticket.jpg"
+
+
+async function main() {
+  // Get the shop keypair from the environment variable
+  const shopPrivateKey = process.env.SHOP_PRIVATE_KEY
+  if (!shopPrivateKey) throw new Error('SHOP_PRIVATE_KEY not found')
+  const shopKeypair = Keypair.fromSecretKey(base58.decode(shopPrivateKey))
+
+  const connection = new Connection(ENDPOINT)
 
   const nfts = Metaplex
     .make(connection, { cluster: 'devnet' })
-    .use(keypairIdentity(payerKeypair))
+    .use(keypairIdentity(shopKeypair))
     .use(bundlrStorage({
-      address: "https://devnet.bundlr.network",
-      providerUrl: "https://api.devnet.solana.com",
+      address: BUNDLR_ADDRESS,
+      providerUrl: ENDPOINT,
       timeout: 60000
     }))
     .nfts();
 
-  const tokenPath = "nft-upload/golden-ticket.jpg"
-  const tokenName = "golden-ticket.jpg"
-
-  const imageBuffer = fs.readFileSync(tokenPath)
-  const file = toMetaplexFile(imageBuffer, tokenName)
+  const imageBuffer = fs.readFileSync(NFT_IMAGE_PATH)
+  const file = toMetaplexFile(imageBuffer, NFT_FILE_NAME)
 
   const uploadedMetadata = await nfts.uploadMetadata({
-    name: "Golden Ticket",
-    symbol: "GOLD",
-    description: "A golden ticket that grants access to loyalty rewards",
+    name: NFT_NAME,
+    symbol: NFT_SYMBOL,
+    description: NFT_DESCRIPTION,
     image: file,
   })
 

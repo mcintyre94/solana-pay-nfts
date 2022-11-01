@@ -1,48 +1,101 @@
-# Next.js TailwindCSS Typescript Starter
-This is a [Next.js](https://nextjs.org/) 12.x, [TailwindCSS](https://tailwindcss.com/) 3.x, and [TypeScript](https://www.typescriptlang.org/docs/home.html) 4.x starter template
+# Send an NFT as part of a Solana Pay payment
 
-For more details, see my blog post. [Nextjs TailwindCSS Typescript Starter](https://dev.to/vuongddang/nextjs-tailwindcss-typescript-starter-1c2m)
+This repo demonstrates an example of the following transaction using Solana Pay:
 
-## How to use this template
-Here're a few ways to create your new project using this template.
-### Using `create-next-app`
-Create a new next.js app from the template using [create-next-app](https://github.com/vercel/next.js/tree/canary/packages/create-next-app)
+- Buyer pays X USDC 
+- They're airdropped an NFT as part of the transaction
+
+It uses the new `@metaplex-foundation/js` library which makes NFT instructions much easier to work with!
+
+
+## Environment variable
+
+One environment variable is required, `SHOP_PRIVATE_KEY`. This is the base58 encoded private key for an account that will pay the network and storage fees.
+
+This is required for uploading NFT metadata and for the checkout API.
+
+
+## Upload NFT metadata
+
+Before an NFT can be created we need to upload its metadata. The easiest way is using Bundlr storage, which Metaplex has a nice plugin for.
+
+Uploading is done using the script [upload.js](./nft-upload/upload.js)
+
+The NFT image file is [golden-ticket.jpg](./nft-upload/golden-ticket.jpg) in the same directory. Feel free to change it!
+
+The rest of the NFT metadata is set by variables in `upload.js`.
+
+Once you've set these you can run the script:
+
+```shell
+$ node nft-upload/upload.js
+Uploaded metadata: https://arweave.net/NX3vDbqU9GNs88cZNOQz5L22kGtlrXj60JxW67oryaI
+Done!
 ```
-npx create-next-app --example "https://github.com/vuongddang/nextjs-tailwindcss-typescript-starter/tree/main"
-# or
-yarn create next-app --example "https://github.com/vuongddang/nextjs-tailwindcss-typescript-starter/tree/main"
+
+
+## Checkout API
+
+The checkout API takes a public key as input and returns a partially signed transaction, which must be signed by the input public key before it is broadcast.
+
+The checkout API code is at [checkout.ts](./pages/api/checkout.ts)
+
+It first creates a Metaplex `TransactionBuilder` to create an NFT:
+
+```ts
+  const transactionBuilder = await nfts.builders().create({
+    uri: METADATA_URI, // use our metadata
+    name: NFT_NAME,
+    tokenOwner: account, // NFT is minted to the wallet submitting the transaction (buyer)
+    updateAuthority: shopKeypair, // we retain update authority
+    sellerFeeBasisPoints: 100, // 1% royalty
+    useNewMint: mintKeypair, // we pass our mint in as the new mint to use
+  })
 ```
 
-### Create new repository from github [template](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template)
+By using a transaction builder we can control the conversion to a Solana `Transaction` and then return it.
 
-You can generate a new repository with the same directory structure and files by click `Use this template` button in the upper right or [click here](https://github.com/vuongddang/nextjs-tailwindcss-typescript-starter/generate).
+It then creates an SPL token transaction to send USDC from the buyer to the shop:
 
-## Getting Started
-Install dependencies:
-```bash
-npm install
-# or
-yarn install
-```
-Run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
+```ts
+  const usdcTransferInstruction = createTransferCheckedInstruction(
+    fromUsdcAddress.address, // from USDC address
+    USDC_ADDRESS, // USDC mint address
+    toUsdcAddress.address, // to USDC address
+    account, // owner of the from USDC address (the buyer)
+    PRICE_USDC * (10 ** decimals), // multiply by 10^decimals
+    decimals
+  )
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This instruction is prepended to the NFT transaction, so that it's part of the same atomic transaction.
 
-You can start editing the page by modifying `src/pages/index.js`. The page auto-updates as you edit the file.
+We then convert it to a `Transaction`, and sign it as:
+
+- The shop keypair, which is our Metaplex identity and pays the fees (so the buyer pays no SOL, just USDC)
+- The mint keypair, which we generate in the API and pass to the NFT create function.
+
+This transaction is only **partially signed**, the USDC instruction additionally requires the user's signature.
+
+We return this transaction, and the user's wallet will be able to sign it as them and then submit it to the network.
 
 
-## Deploy on Vercel
+## Submitting the transaction
 
-Once you have the project running locally you can [import](https://vercel.com/import/git) your project to Vercel and get it up and running in a few clicks.
+The home page is at [index.tsx](./pages/index.tsx). It has code to connect a wallet (using wallet-adapter) and fetch/send the transaction. It also has code to display a QR code that can be scanned by wallets that support Solana Pay, which encodes a call to the checkout API.
 
-Other option is to click on the button below to create a new repository that look exactly like this one, and sets it up and running on Vercel. 
+Both are an identical transaction. The browser wallets tend to have better error messaging if anything goes wrong, and you'll have access to the browser console too.
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/vuongddang/nextjs-tailwindcss-typescript-starter/tree/main)
+### Making localhost:3000 internet accessible
 
-Check out [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+When you scan the QR code it encodes the full URL of the checkout API, eg. `http://localhost:3000/api/checkout`. Without fiddling with networking on the phone, this can't be resolved by a mobile wallet.
+
+One easy way to handle this is to use [ngrok](https://ngrok.com). Once you sign up (free) and download their CLI you can run `ngrok http 3000`.
+
+You'll see an output with a message like:
+
+```
+Forwarding                    https://6fba-2a02-c7c-50a3-a200-1402-5c1a-a7d2-174d.eu.ngrok.io -> http://localhost:3000
+```
+
+This `ngrok.io` domain will forward to your `localhost:3000` and be accessible anywhere. In other words it'll show the home page, with a QR code that encodes eg. `https://6fba-2a02-c7c-50a3-a200-1402-5c1a-a7d2-174d.eu.ngrok.io/api/checkout`. This will work correctly with mobile wallets! 

@@ -21,7 +21,7 @@ const ENDPOINT = clusterApiUrl('devnet')
 const NFT_NAME = "Golden Ticket"
 
 // The amount to charge in USDC
-const PRICE_USDC = 200
+const PRICE_USDC = 0.1
 
 type InputData = {
   account: string,
