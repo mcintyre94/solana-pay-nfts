@@ -20,8 +20,8 @@ const NFT_NAME = "Golden Ticket"
 const NFT_SYMBOL = "GOLD"
 const NFT_DESCRIPTION = "A golden ticket that grants access to loyalty rewards"
 // Set this relative to the root directory
-const NFT_IMAGE_PATH = "nft-upload/golden-ticket.jpg"
-const NFT_FILE_NAME = "golden-ticket.jpg"
+const NFT_IMAGE_PATH = "nft-upload/pay-logo.svg"
+const NFT_FILE_NAME = "pay-logo.svg"
 
 
 async function main() {

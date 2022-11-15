@@ -6,7 +6,7 @@ import base58 from 'bs58'
 
 // Update these variables!
 // This is returned by nft-upload/upload.js
-const METADATA_URI = "https://arweave.net/3F1tuBwA6Y3jonQZC-jgXe40KHcqrcrrygTFe2sVdbI"
+const METADATA_URI = "https://arweave.net/1am2-5vjzk639JPAL_FMkswJPfbxe38Ejrmh8CkaAu8"
 
 // Devnet 'fake' USDC, you can get these tokens from https://spl-token-faucet.com/
 const USDC_ADDRESS = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr")
@@ -43,8 +43,8 @@ export type PostError = {
 
 function get(res: NextApiResponse<GetResponse>) {
   res.status(200).json({
-    label: "Dinos 'R' Us 🦖",
-    icon: "https://freesvg.org/img/DINO-01.png",
+    label: "My Store",
+    icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
   })
 }
 

@@ -21,7 +21,7 @@ Before an NFT can be created we need to upload its metadata. The easiest way is 
 
 Uploading is done using the script [upload.js](./nft-upload/upload.js)
 
-The NFT image file is [golden-ticket.jpg](./nft-upload/golden-ticket.jpg) in the same directory. Feel free to change it!
+The NFT image file is [pay-logo.svg](./nft-upload/pay-logo.svg) in the same directory. Feel free to change it!
 
 The rest of the NFT metadata is set by variables in `upload.js`.
 
@@ -29,7 +29,7 @@ Once you've set these you can run the script:
 
 ```shell
 $ node nft-upload/upload.js
-Uploaded metadata: https://arweave.net/NX3vDbqU9GNs88cZNOQz5L22kGtlrXj60JxW67oryaI
+Uploaded metadata: https://arweave.net/mAbxQsdFYQNRFPqWHNzZbkwVw6LFp3k9LvRTxuZpVXk
 Done!
 ```
 
