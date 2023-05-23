@@ -9,7 +9,7 @@ import base58 from 'bs58'
 const METADATA_URI = "https://arweave.net/1am2-5vjzk639JPAL_FMkswJPfbxe38Ejrmh8CkaAu8"
 
 // Devnet 'fake' USDC, you can get these tokens from https://spl-token-faucet.com/
-const USDC_ADDRESS = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr")
+const USDC_ADDRESS = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU")
 
 // Mainnet USDC, uncomment if using mainnet
 // const USDC_ADDRESS = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
@@ -48,7 +48,7 @@ function get(res: NextApiResponse<GetResponse>) {
   })
 }
 
-async function postImpl(account: PublicKey): Promise<PostResponse> {
+async function postImpl(account: PublicKey, reference: PublicKey): Promise<PostResponse> {
   const connection = new Connection(ENDPOINT)
 
   // Get the shop keypair from the environment variable
@@ -107,6 +107,13 @@ async function postImpl(account: PublicKey): Promise<PostResponse> {
     decimals
   )
 
+  // Add the reference parameter to the USDC instruction
+  usdcTransferInstruction.keys.push({
+    pubkey: reference,
+    isWritable: false,
+    isSigner: false,
+  });
+
   // Create a guest identity for buyer, so they will be a required signer for the transaction
   const identitySigner = new GuestIdentityDriver(account)
 
@@ -152,8 +159,13 @@ async function post(
     return
   }
 
+  const { reference } = req.query;
+  if (typeof reference !== 'string') {
+    res.status(400).json({ error: "No valid reference provided" })
+    return
+  }
   try {
-    const mintOutputData = await postImpl(new PublicKey(account));
+    const mintOutputData = await postImpl(new PublicKey(account), new PublicKey(reference));
     res.status(200).json(mintOutputData)
     return
   } catch (error) {

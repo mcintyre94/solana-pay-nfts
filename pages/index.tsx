@@ -1,16 +1,20 @@
 import { createQR, encodeURL, TransactionRequestURLFields } from '@solana/pay'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
   PostResponse as CheckoutPostResponse,
   PostError as CheckoutPostError,
-} from './api/checkout'
-import { Transaction } from '@solana/web3.js';
+} from './api/checkout/[reference]'
+import { Keypair, Transaction } from '@solana/web3.js';
+import useTransactionListener from '../hooks/useTransactionListener';
 
 export default function Home() {
   const { connection } = useConnection()
   const { publicKey, sendTransaction } = useWallet()
+
+  const { publicKey: reference } = useMemo(() => Keypair.generate(), []);
+  useTransactionListener(reference);
 
   const mintQrRef = useRef<HTMLDivElement>()
 
@@ -19,7 +23,7 @@ export default function Home() {
   // We can only generate a QR code on the client, so do it in the useEffect
   useEffect(() => {
     const { location } = window
-    const apiUrl = `${location.protocol}//${location.host}/api/checkout`
+    const apiUrl = `${location.protocol}//${location.host}/api/checkout/${reference}`
 
     const mintUrlFields: TransactionRequestURLFields = {
       link: new URL(apiUrl),
